@@ -24,4 +24,5 @@ export interface ClusterState {
   name: string
   services: ServiceInfo[]
   gatewayName: string
+  mode?: 'demo' | 'live'
 }

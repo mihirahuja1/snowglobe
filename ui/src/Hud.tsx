@@ -67,7 +67,7 @@ export function Hud({ cluster }: { cluster: ClusterState }) {
           color: '#9b9a94',
         }}
       >
-        demo mode · fill level = cpu · red pulse = CrashLoopBackOff · dashed = pending · drag to orbit
+        {cluster.mode === 'live' ? 'live' : 'demo mode'} · fill level = cpu · red pulse = CrashLoopBackOff · dashed = pending · drag to orbit
       </div>
     </>
   )

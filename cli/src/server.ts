@@ -64,6 +64,7 @@ export function startServer(opts: ServerOptions): void {
       payload = await fetchCluster(opts.namespace)
     }
     if (payload) {
+      payload.mode = opts.mode
       const msg = JSON.stringify(payload)
       for (const ws of sockets) {
         if (ws.readyState === WebSocket.OPEN) ws.send(msg)
