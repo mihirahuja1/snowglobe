@@ -1,16 +1,20 @@
 # snowglobe
 
-**Your cluster in a snowglobe.** A real-time 3D visualizer that makes Kubernetes finally click.
+A real-time 3D visualizer for Kubernetes clusters.
 
-Kubernetes isn't complicated — it's just invisible. Snowglobe renders your cluster as a living 3D scene: services orbit a central gateway, pods are pentagon vessels that fill up with CPU, replicas queue up behind their lead pod, and traffic flows as particle streams whose density matches real request rates.
+I think Kubernetes gets oversold as complicated. Most of the confusion goes away once you can actually see what's going on. Snowglobe renders your cluster as a 3D scene: services sit around a central gateway, pods are pentagon-shaped vessels that fill up as they use CPU, replicas line up behind their lead pod, and traffic moves between services as particles.
 
-- 🔷 **Pods as vessels** — fill level = CPU vs limit; turns amber as it runs hot
-- 👻 **Pending pods** — dashed ghosts that haven't been scheduled yet
-- 🔴 **CrashLoopBackOff** — pulses red with a live restart counter
-- 🌊 **Traffic streams** — particle density proportional to req/s
-- 🔁 **Real time** — driven by Kubernetes watch streams, not polling
+What it shows:
 
-## Try it (no cluster required)
+- CPU usage as a fill level inside each pod (goes amber when a pod runs hot)
+- Pending pods as dashed outlines that haven't been scheduled yet
+- CrashLoopBackOff as a red pulse with the restart count
+- Traffic between services, particle density scaled to req/s
+- Everything updates live off Kubernetes watch streams, no polling
+
+## Running it
+
+No cluster needed, there's a built-in demo mode:
 
 ```sh
 cd ui
@@ -18,19 +22,19 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:8383 — you get a demo cluster with live scaling, crashes, and recoveries.
+Open http://localhost:8383. The demo cluster scales, crashes and recovers on its own so you can see all the states.
 
-## Architecture
+## How it works
 
-No database, no deployment, nothing leaves your machine. A thin local CLI reads your existing kubeconfig, watches the Kubernetes API (read-only), and streams state to the browser over a websocket. Utilization comes from metrics-server when available; request rates from Prometheus if detected.
+There's no database and nothing leaves your machine. A small local CLI reads your existing kubeconfig, watches the Kubernetes API (read-only) and streams state to the browser over a websocket. CPU numbers come from metrics-server if it's installed. Request rates come from Prometheus if it's there, otherwise the traffic animation is illustrative.
 
 ```
-browser (React + three.js)  ⇄  snowglobe CLI (local proxy)  →  Kubernetes API (watch, read-only)
+browser (React + three.js)  <->  snowglobe CLI (local proxy)  ->  Kubernetes API (watch, read-only)
 ```
 
 ## Status
 
-Early days. The demo-mode frontend is working; the live-cluster proxy is next.
+Early. The demo-mode frontend works, the live cluster proxy is in progress.
 
 ## License
 
