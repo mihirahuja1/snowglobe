@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: { port: 8383 },
   build: {
-    outDir: '../server/snowglobe/static',
+    outDir: '../cli/static',
     emptyOutDir: true,
   },
 })

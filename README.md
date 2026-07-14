@@ -15,6 +15,10 @@ What it shows:
 ## Installing
 
 ```sh
+npx snowglobe-k8s          # no install
+# or
+npm install -g snowglobe-k8s
+# or
 brew install mihirahuja1/tap/snowglobe
 ```
 
@@ -35,7 +39,7 @@ npm install
 npm run dev        # frontend only, falls back to the built-in demo
 ```
 
-To run the server against the built frontend: `cd ui && npm run build`, then `cd ../server && PYTHONPATH=. python3 -m snowglobe.cli --demo`.
+To run the CLI against the built frontend: `cd ui && npm run build`, then `cd ../cli && npm run build && node dist/cli.js --demo`.
 
 ## How it works
 
