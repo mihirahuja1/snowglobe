@@ -12,17 +12,30 @@ What it shows:
 - Traffic between services, particle density scaled to req/s
 - Everything updates live off Kubernetes watch streams, no polling
 
-## Running it
+## Installing
 
-No cluster needed, there's a built-in demo mode:
+```sh
+brew install mihirahuja1/tap/snowglobe
+```
+
+Then:
+
+```sh
+snowglobe --demo   # simulated cluster, nothing required
+snowglobe          # your real cluster, uses kubectl and your current context
+```
+
+Opens at http://localhost:8383. The demo cluster scales, crashes and recovers on its own so you can see all the states. Live mode needs kubectl on your PATH; CPU fill levels need metrics-server in the cluster.
+
+## Developing
 
 ```sh
 cd ui
 npm install
-npm run dev
+npm run dev        # frontend only, falls back to the built-in demo
 ```
 
-Open http://localhost:8383. The demo cluster scales, crashes and recovers on its own so you can see all the states.
+To run the server against the built frontend: `cd ui && npm run build`, then `cd ../server && PYTHONPATH=. python3 -m snowglobe.cli --demo`.
 
 ## How it works
 
