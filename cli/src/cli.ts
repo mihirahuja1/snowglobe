@@ -20,9 +20,9 @@ const { values } = parseArgs({
 })
 
 if (values.help) {
-  console.log(`snowglobe ${version} — real-time 3D visualizer for Kubernetes clusters
+  console.log(`kubemapper ${version} — real-time 3D visualizer for Kubernetes clusters
 
-usage: snowglobe [options]
+usage: kubemapper [options]
 
   --demo             run with a simulated cluster
   -n, --namespace    namespace to watch (default: all)
@@ -32,7 +32,7 @@ usage: snowglobe [options]
   process.exit(0)
 }
 if (values.version) {
-  console.log(`snowglobe ${version}`)
+  console.log(`kubemapper ${version}`)
   process.exit(0)
 }
 
@@ -51,7 +51,7 @@ async function main(): Promise<void> {
   }
 
   const url = `http://localhost:${port}`
-  console.log(`snowglobe: ${mode === 'demo' ? 'demo cluster' : 'live cluster'} at ${url}`)
+  console.log(`kubemapper: ${mode === 'demo' ? 'demo cluster' : 'live cluster'} at ${url}`)
 
   startServer({ mode, port, namespace: values.namespace })
 

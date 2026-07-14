@@ -1,8 +1,8 @@
-# snowglobe
+# kubemapper
 
 A real-time 3D visualizer for Kubernetes clusters.
 
-I think Kubernetes gets oversold as complicated. Most of the confusion goes away once you can actually see what's going on. Snowglobe renders your cluster as a 3D scene: services sit around a central gateway, pods are pentagon-shaped vessels that fill up as they use CPU, replicas line up behind their lead pod, and traffic moves between services as particles.
+I think Kubernetes gets oversold as complicated. Most of the confusion goes away once you can actually see what's going on. Kubemapper renders your cluster as a 3D scene: services sit around a central gateway, pods are pentagon-shaped vessels that fill up as they use CPU, replicas line up behind their lead pod, and traffic moves between services as particles.
 
 What it shows:
 
@@ -10,23 +10,23 @@ What it shows:
 - Pending pods as dashed outlines that haven't been scheduled yet
 - CrashLoopBackOff as a red pulse with the restart count
 - Traffic between services, particle density scaled to req/s
-- Everything updates live off Kubernetes watch streams, no polling
+- Live updates pushed to the browser over a websocket
 
 ## Installing
 
 ```sh
-npx snowglobe-k8s          # no install
+npx kubemapper          # no install
 # or
-npm install -g snowglobe-k8s
+npm install -g kubemapper
 # or
-brew install mihirahuja1/tap/snowglobe
+brew install mihirahuja1/tap/kubemapper
 ```
 
 Then:
 
 ```sh
-snowglobe --demo   # simulated cluster, nothing required
-snowglobe          # your real cluster, uses kubectl and your current context
+kubemapper --demo   # simulated cluster, nothing required
+kubemapper          # your real cluster, uses kubectl and your current context
 ```
 
 Opens at http://localhost:8383. The demo cluster scales, crashes and recovers on its own so you can see all the states. Live mode needs kubectl on your PATH; CPU fill levels need metrics-server in the cluster.
@@ -43,15 +43,15 @@ To run the CLI against the built frontend: `cd ui && npm run build`, then `cd ..
 
 ## How it works
 
-There's no database and nothing leaves your machine. A small local CLI reads your existing kubeconfig, watches the Kubernetes API (read-only) and streams state to the browser over a websocket. CPU numbers come from metrics-server if it's installed. Request rates come from Prometheus if it's there, otherwise the traffic animation is illustrative.
+There's no database and nothing leaves your machine. A small local CLI (Node) reads your cluster through kubectl, using your current context, and streams state to the browser over a websocket. The React frontend does all the rendering with three.js. CPU numbers come from metrics-server if it's installed. Request-rate traffic in live mode isn't wired up yet, so those particles are illustrative for now.
 
 ```
-browser (React + three.js)  <->  snowglobe CLI (local proxy)  ->  Kubernetes API (watch, read-only)
+browser (React + three.js)  <->  kubemapper CLI (Node, local)  ->  kubectl  ->  Kubernetes API
 ```
 
 ## Status
 
-Early. The demo-mode frontend works, the live cluster proxy is in progress.
+Early. Demo mode and live pod/replica/health rendering work. Request-rate traffic and richer topology are next.
 
 ## License
 

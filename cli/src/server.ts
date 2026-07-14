@@ -40,7 +40,7 @@ export interface ServerOptions {
 
 export function startServer(opts: ServerOptions): void {
   if (!existsSync(STATIC_DIR)) {
-    console.error('static UI bundle missing; reinstall snowglobe')
+    console.error('static UI bundle missing; reinstall kubemapper')
     process.exit(1)
   }
 

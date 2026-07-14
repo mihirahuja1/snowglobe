@@ -1,15 +1,15 @@
 {
-  "name": "snowglobe-k8s",
+  "name": "kubemapper",
   "version": "0.1.0",
   "description": "Real-time 3D visualizer for Kubernetes clusters",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mihirahuja1/snowglobe.git"
+    "url": "git+https://github.com/mihirahuja1/kubemapper.git"
   },
   "type": "module",
   "bin": {
-    "snowglobe": "dist/cli.js"
+    "kubemapper": "dist/cli.js"
   },
   "files": [
     "dist",

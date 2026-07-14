@@ -27,7 +27,7 @@ export function Hud({ cluster }: { cluster: ClusterState }) {
               clipPath: 'polygon(50% 0%, 100% 38%, 81% 100%, 19% 100%, 0% 38%)',
             }}
           />
-          <span style={{ fontSize: 13, fontWeight: 500, color: '#37352f' }}>snowglobe</span>
+          <span style={{ fontSize: 13, fontWeight: 500, color: '#37352f' }}>kubemapper</span>
           <span style={{ fontSize: 12, color: '#9b9a94' }}>{cluster.name}</span>
         </div>
       </div>
