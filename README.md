@@ -1,5 +1,7 @@
 # kubemapper
 
+<img width="1774" height="1012" alt="image" src="https://github.com/user-attachments/assets/636134dd-0eed-40d8-be6b-d88a01b8faec" />
+
 A real-time 3D visualizer for Kubernetes clusters.
 
 I think Kubernetes gets oversold as complicated. Most of the confusion goes away once you can actually see what's going on. Kubemapper renders your cluster as a 3D scene: services sit around a central gateway, pods are pentagon-shaped vessels that fill up as they use CPU, replicas line up behind their lead pod, and traffic moves between services as particles.
