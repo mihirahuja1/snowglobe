@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
-import { ClusterState } from './types'
+import { ClusterState, StatusMessage } from './types'
 import { initialCluster, tickCluster } from './mock'
 import { Scene } from './scene/Scene'
 import { Hud } from './Hud'
 import { ThemeContext, light, dark } from './theme'
 
-type Source = 'connecting' | 'server' | 'local-demo'
+type Conn =
+  | { kind: 'connecting' }
+  | { kind: 'live' }
+  | { kind: 'demo' }
+  | { kind: 'local-demo' }
+  | { kind: 'stale'; since: number }
+  | { kind: 'error'; reason: string; message: string }
 
 function initialThemeName(): 'light' | 'dark' {
   const saved = localStorage.getItem('kubemapper-theme')
@@ -15,10 +21,10 @@ function initialThemeName(): 'light' | 'dark' {
 
 export default function App() {
   const [cluster, setCluster] = useState<ClusterState>(initialCluster)
-  const [source, setSource] = useState<Source>('connecting')
+  const [conn, setConn] = useState<Conn>({ kind: 'connecting' })
   const [themeName, setThemeName] = useState<'light' | 'dark'>(initialThemeName)
-  const sourceRef = useRef<Source>('connecting')
-  sourceRef.current = source
+  const connRef = useRef<Conn>(conn)
+  connRef.current = conn
 
   const theme = themeName === 'dark' ? dark : light
 
@@ -31,30 +37,34 @@ export default function App() {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws'
     const ws = new WebSocket(`${proto}://${location.host}/ws`)
     const fallback = setTimeout(() => {
-      if (sourceRef.current === 'connecting') setSource('local-demo')
+      if (connRef.current.kind === 'connecting') setConn({ kind: 'local-demo' })
     }, 1500)
 
     ws.onmessage = (ev) => {
-      let data: unknown
+      let data: any
       try {
         data = JSON.parse(ev.data)
       } catch {
         return
       }
-      if (
-        typeof data === 'object' &&
-        data !== null &&
-        Array.isArray((data as ClusterState).services)
-      ) {
-        setSource('server')
-        setCluster(data as ClusterState)
+      if (data && data.status === 'error') {
+        const msg = data as StatusMessage
+        setConn({ kind: 'error', reason: msg.reason, message: msg.message })
+        return
+      }
+      if (data && Array.isArray(data.services)) {
+        const c = data as ClusterState
+        setCluster(c)
+        setConn({ kind: c.mode === 'live' ? 'live' : 'demo' })
       }
     }
     ws.onerror = () => {
-      if (sourceRef.current !== 'server') setSource('local-demo')
+      if (connRef.current.kind === 'connecting') setConn({ kind: 'local-demo' })
     }
     ws.onclose = () => {
-      if (sourceRef.current !== 'server') setSource('local-demo')
+      const k = connRef.current.kind
+      if (k === 'live' || k === 'demo') setConn({ kind: 'stale', since: Date.now() })
+      else if (k === 'connecting') setConn({ kind: 'local-demo' })
     }
     return () => {
       clearTimeout(fallback)
@@ -62,17 +72,19 @@ export default function App() {
     }
   }, [])
 
+  // Only the browser-only fallback (no server at all, e.g. `vite dev`) animates locally.
   useEffect(() => {
-    if (source !== 'local-demo') return
+    if (conn.kind !== 'local-demo') return
     const id = setInterval(() => setCluster((c) => tickCluster(c)), 1500)
     return () => clearInterval(id)
-  }, [source])
+  }, [conn.kind])
 
   return (
     <ThemeContext.Provider value={theme}>
       <div style={{ position: 'relative', width: '100%', height: '100%', background: theme.bg }}>
         <Hud
           cluster={cluster}
+          conn={conn}
           onToggleTheme={() => setThemeName((t) => (t === 'dark' ? 'light' : 'dark'))}
         />
         <Scene cluster={cluster} />

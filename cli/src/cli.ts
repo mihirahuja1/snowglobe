@@ -37,28 +37,63 @@ if (values.version) {
 }
 
 const port = parseInt(values.port!, 10)
+if (!Number.isInteger(port) || port < 1 || port > 65535) {
+  console.error(`invalid port: ${values.port}`)
+  process.exit(1)
+}
+
+function openBrowser(url: string): void {
+  const plat = process.platform
+  const cmd = plat === 'darwin' ? 'open' : plat === 'win32' ? 'start' : 'xdg-open'
+  // `start` is a cmd.exe builtin, so it needs a shell; the empty title arg avoids
+  // start treating the URL as a window title.
+  const args = plat === 'win32' ? ['', url] : [url]
+  try {
+    spawn(cmd, args, { stdio: 'ignore', detached: true, shell: plat === 'win32' }).unref()
+  } catch {
+    /* opening a browser is best-effort */
+  }
+}
 
 async function main(): Promise<void> {
   let mode: 'demo' | 'live' = values.demo ? 'demo' : 'live'
+  let demoReason: string | undefined
+
   if (mode === 'live') {
     if (!(await kubectlAvailable())) {
-      console.log('kubectl not found, starting in demo mode (use --demo to hide this message)')
+      console.log('kubectl not found on PATH — starting in demo mode.')
+      console.log('  install kubectl and re-run, or use --demo to silence this.')
       mode = 'demo'
-    } else if ((await fetchCluster(values.namespace)) === null) {
-      console.log("couldn't reach a cluster with kubectl, starting in demo mode")
-      mode = 'demo'
+      demoReason = 'kubectl not found'
+    } else {
+      const probe = await fetchCluster(values.namespace)
+      if (!probe.ok) {
+        if (probe.reason === 'forbidden') {
+          console.log('access denied listing workloads cluster-wide — starting in demo mode.')
+          console.log(`  try scoping to a namespace you can read:  kubemapper -n <namespace>`)
+        } else if (probe.reason === 'empty') {
+          console.log(`${probe.message} — starting in demo mode.`)
+        } else {
+          console.log(`couldn't reach a cluster (${probe.message}) — starting in demo mode.`)
+          console.log('  check `kubectl get pods` works, then re-run.')
+        }
+        mode = 'demo'
+        demoReason = probe.message
+      } else {
+        const c = probe.cluster
+        console.log(`connected to "${c.name}" — ${c.services.length} workloads.`)
+        if (c.metricsAvailable === false) {
+          console.log('  note: metrics-server not detected, so CPU fill will read 0.')
+        }
+      }
     }
   }
 
   const url = `http://localhost:${port}`
   console.log(`kubemapper: ${mode === 'demo' ? 'demo cluster' : 'live cluster'} at ${url}`)
 
-  startServer({ mode, port, namespace: values.namespace })
-
-  if (!values['no-browser']) {
-    const opener = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open'
-    spawn(opener, [url], { stdio: 'ignore', detached: true }).unref()
-  }
+  startServer({ mode, port, namespace: values.namespace, demoReason })
+  if (!values['no-browser']) openBrowser(url)
 }
 
 void main()

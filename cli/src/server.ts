@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { WebSocketServer, WebSocket } from 'ws'
 import { initialCluster, tickCluster } from './demo.js'
 import { fetchCluster } from './k8s.js'
+import { StatusMessage } from './types.js'
 
 const STATIC_DIR = join(fileURLToPath(new URL('.', import.meta.url)), '..', 'static')
 
@@ -36,6 +37,7 @@ export interface ServerOptions {
   mode: 'demo' | 'live'
   port: number
   namespace?: string
+  demoReason?: string
 }
 
 export function startServer(opts: ServerOptions): void {
@@ -48,30 +50,53 @@ export function startServer(opts: ServerOptions): void {
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' })
   const sockets = new Set<WebSocket>()
 
+  let lastMessage: string | null = null
+
+  function send(obj: unknown): void {
+    lastMessage = JSON.stringify(obj)
+    for (const ws of sockets) {
+      if (ws.readyState === WebSocket.OPEN) ws.send(lastMessage)
+    }
+  }
+
   wss.on('connection', (ws) => {
     sockets.add(ws)
+    // hand the newcomer the current state immediately, don't make it wait a tick
+    if (lastMessage) ws.send(lastMessage)
     ws.on('close', () => sockets.delete(ws))
     ws.on('error', () => sockets.delete(ws))
   })
 
-  let demoState = opts.mode === 'demo' ? initialCluster() : null
+  const demoState = opts.mode === 'demo' ? initialCluster() : null
 
   async function broadcast(): Promise<void> {
-    let payload
     if (opts.mode === 'demo') {
-      payload = tickCluster(demoState!)
+      const cluster = tickCluster(demoState!)
+      send({ ...cluster, mode: 'demo', demoReason: opts.demoReason })
     } else {
-      payload = await fetchCluster(opts.namespace)
-    }
-    if (payload) {
-      payload.mode = opts.mode
-      const msg = JSON.stringify(payload)
-      for (const ws of sockets) {
-        if (ws.readyState === WebSocket.OPEN) ws.send(msg)
+      const res = await fetchCluster(opts.namespace)
+      if (res.ok) {
+        send({ ...res.cluster, mode: 'live' })
+      } else {
+        const status: StatusMessage = { status: 'error', reason: res.reason, message: res.message }
+        send(status)
       }
     }
     setTimeout(broadcast, opts.mode === 'demo' ? 1500 : 2500)
   }
+
+  httpServer.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(
+        `port ${opts.port} is already in use.\n` +
+          `something else is running there — try a different port:\n` +
+          `  kubemapper${opts.mode === 'demo' ? ' --demo' : ''} --port ${opts.port + 1}`
+      )
+    } else {
+      console.error(`server error: ${err.message}`)
+    }
+    process.exit(1)
+  })
 
   httpServer.listen(opts.port, '127.0.0.1', () => {
     void broadcast()

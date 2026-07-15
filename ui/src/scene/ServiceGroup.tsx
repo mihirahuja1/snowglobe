@@ -75,6 +75,9 @@ export function ServiceGroup({ service, compact = false }: Props) {
           <div style={{ fontSize: 15, fontWeight: 500, color: theme.textPrimary }}>
             {displayName}
           </div>
+          {!compact && service.kind && service.kind !== 'Deployment' && (
+            <div style={{ fontSize: 11, color: theme.textMuted }}>{service.kind.toLowerCase()}</div>
+          )}
           {(!compact || unhealthy) && (
             <div style={{ fontSize: 12, color: statusColor }}>{statusText}</div>
           )}

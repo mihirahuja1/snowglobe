@@ -13,8 +13,9 @@ interface Props {
 export function Stream({ from, to, color, rps, sag = 2.2 }: Props) {
   const points = useRef<THREE.Points>(null!)
 
-  const count = Math.max(3, Math.min(30, Math.round(rps / 110)))
-  const width = Math.max(0.015, Math.min(0.06, rps / 45000))
+  // No request-rate data (live mode) → draw the topology tube but no fake particles.
+  const count = rps > 0 ? Math.max(3, Math.min(30, Math.round(rps / 110))) : 0
+  const width = rps > 0 ? Math.max(0.015, Math.min(0.06, rps / 45000)) : 0.02
 
   const { curve, tubeGeo, particleGeo, phases, speeds } = useMemo(() => {
     const mid = new THREE.Vector3(
