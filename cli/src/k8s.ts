@@ -52,7 +52,15 @@ export async function fetchCluster(namespace?: string): Promise<ClusterState | n
   ])
   if (deploysRaw === null || podsRaw === null) return null
 
-  const deploys = JSON.parse(deploysRaw).items ?? []
+  const SYSTEM_NS = new Set([
+    'kube-system', 'kube-public', 'kube-node-lease',
+    'gmp-system', 'gmp-public', 'gke-managed-system', 'gke-managed-cim',
+    'gke-managed-volumepopulator', 'gke-gmp-system',
+  ])
+  const allDeploys = JSON.parse(deploysRaw).items ?? []
+  const deploys = namespace
+    ? allDeploys
+    : allDeploys.filter((d: any) => !SYSTEM_NS.has(d.metadata?.namespace))
   const pods = JSON.parse(podsRaw).items ?? []
 
   const top = new Map<string, number>()
@@ -66,8 +74,10 @@ export async function fetchCluster(namespace?: string): Promise<ClusterState | n
   }
 
   const services: ServiceInfo[] = []
-  const n = Math.max(1, deploys.length)
-  deploys.slice(0, 12).forEach((dep: any, i: number) => {
+  const shown = deploys.slice(0, 24)
+  const n = Math.max(1, shown.length)
+  const ringDist = Math.max(9.5, (n * 7.5) / (2 * Math.PI))
+  shown.forEach((dep: any, i: number) => {
     const depName: string = dep.metadata.name
     const desired: number = dep.spec?.replicas ?? 1
 
@@ -95,7 +105,7 @@ export async function fetchCluster(namespace?: string): Promise<ClusterState | n
       name: depName,
       color: COLOR_CYCLE[i % COLOR_CYCLE.length],
       angle: Math.round((-Math.PI + (2 * Math.PI * i) / n) * 1000) / 1000,
-      dist: 9.5,
+      dist: Math.round(ringDist * 100) / 100,
       desired,
       pods: depPods.length
         ? depPods

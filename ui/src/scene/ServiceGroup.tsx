@@ -6,6 +6,7 @@ import { Pod } from './Pod'
 
 interface Props {
   service: ServiceInfo
+  compact?: boolean
 }
 
 export function servicePosition(svc: ServiceInfo): THREE.Vector3 {
@@ -16,7 +17,7 @@ export function servicePosition(svc: ServiceInfo): THREE.Vector3 {
   )
 }
 
-export function ServiceGroup({ service }: Props) {
+export function ServiceGroup({ service, compact = false }: Props) {
   const pos = useMemo(() => servicePosition(service), [service.angle, service.dist])
   const away = useMemo(
     () => new THREE.Vector3(pos.x, 0, pos.z).normalize(),
@@ -36,6 +37,9 @@ export function ServiceGroup({ service }: Props) {
   } else if (ready < service.desired) {
     statusColor = '#8a6d1a'
   }
+  const unhealthy = crashing || ready < service.desired
+  const displayName =
+    service.name.length > 18 ? service.name.slice(0, 17) + '…' : service.name
 
   const plateLen = 2.4 + Math.max(0, n - 1) * 1.7
   const plateCenter = (Math.max(0, n - 1) * 1.7) / 2
@@ -58,11 +62,21 @@ export function ServiceGroup({ service }: Props) {
           position={[pos.x + away.x * 1.7 * i, 0.75, pos.z + away.z * 1.7 * i]}
         />
       ))}
-      <Html center position={[pos.x, 2.7, pos.z]} style={{ pointerEvents: 'none' }}>
-        <div style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
-          <div style={{ fontSize: 14, fontWeight: 500, color: '#37352f' }}>{service.name}</div>
-          <div style={{ fontSize: 11, color: statusColor }}>{statusText}</div>
-          <div style={{ fontSize: 11, color: '#9b9a94' }}>{service.rps.toLocaleString()} req/s</div>
+      <Html
+        center
+        position={[pos.x, 2.7, pos.z]}
+        distanceFactor={36}
+        zIndexRange={[100, 0]}
+        style={{ pointerEvents: 'none' }}
+      >
+        <div title={service.name} style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: 15, fontWeight: 500, color: '#37352f' }}>{displayName}</div>
+          {(!compact || unhealthy) && (
+            <div style={{ fontSize: 12, color: statusColor }}>{statusText}</div>
+          )}
+          {!compact && service.rps > 0 && (
+            <div style={{ fontSize: 12, color: '#9b9a94' }}>{service.rps.toLocaleString()} req/s</div>
+          )}
         </div>
       </Html>
     </group>

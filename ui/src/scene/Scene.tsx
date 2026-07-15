@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { useEffect, useMemo, useRef } from 'react'
+import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { ClusterState } from '../types'
@@ -8,6 +8,19 @@ import { ServiceGroup, servicePosition } from './ServiceGroup'
 import { Stream } from './Stream'
 
 const GATEWAY_POS = new THREE.Vector3(0, 0.55, 0)
+
+function CameraRig({ sceneRadius }: { sceneRadius: number }) {
+  const { camera } = useThree()
+  const applied = useRef(0)
+  useEffect(() => {
+    const target = Math.max(40, sceneRadius * 2.9)
+    if (applied.current === 0 || Math.abs(target - applied.current) / target > 0.15) {
+      camera.position.setLength(target)
+      applied.current = target
+    }
+  }, [sceneRadius, camera])
+  return null
+}
 
 export function Scene({ cluster }: { cluster: ClusterState }) {
   const positions = useMemo(() => {
@@ -20,13 +33,22 @@ export function Scene({ cluster }: { cluster: ClusterState }) {
     .filter((s) => s.upstream === null)
     .reduce((sum, s) => sum + s.rps, 0)
 
+  const compact = cluster.services.length > 8
+  const sceneRadius = Math.max(
+    14,
+    ...cluster.services.map((s) => s.dist + Math.max(0, s.pods.length - 1) * 1.7)
+  )
+
   return (
     <Canvas
       shadows
-      camera={{ position: [22, 18, 29], fov: 42 }}
+      camera={{ position: [19, 26, 25], fov: 42 }}
       style={{ background: '#f6f6f3' }}
     >
-      <fog attach="fog" args={['#f6f6f3', 30, 60]} />
+      <fog
+        attach="fog"
+        args={['#f6f6f3', Math.max(30, sceneRadius * 2.2), Math.max(60, sceneRadius * 5.5)]}
+      />
       <ambientLight intensity={0.75} />
       <directionalLight
         position={[10, 18, 8]}
@@ -52,8 +74,10 @@ export function Scene({ cluster }: { cluster: ClusterState }) {
 
       <Gateway name={cluster.gatewayName} totalRps={totalRps} />
 
+      <CameraRig sceneRadius={sceneRadius} />
+
       {cluster.services.map((svc) => (
-        <ServiceGroup key={svc.name} service={svc} />
+        <ServiceGroup key={svc.name} service={svc} compact={compact} />
       ))}
 
       {cluster.services.map((svc) => {
@@ -74,7 +98,7 @@ export function Scene({ cluster }: { cluster: ClusterState }) {
       <OrbitControls
         enablePan={false}
         minDistance={10}
-        maxDistance={42}
+        maxDistance={Math.max(42, sceneRadius * 4)}
         maxPolarAngle={Math.PI / 2.15}
         target={[0, 0.8, 0]}
       />

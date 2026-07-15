@@ -29,11 +29,18 @@ export function Gateway({ name, totalRps }: { name: string; totalRps: number }) 
         <ringGeometry args={[2.0, 2.06, 64]} />
         <meshBasicMaterial color="#c9c8c2" side={THREE.DoubleSide} transparent opacity={0.8} />
       </mesh>
-      <Html center position={[0, 2.1, 0]} style={{ pointerEvents: 'none' }}>
+      <Html
+        center
+        position={[0, 2.1, 0]}
+        distanceFactor={36}
+        zIndexRange={[100, 0]}
+        style={{ pointerEvents: 'none' }}
+      >
         <div style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
-          <div style={{ fontSize: 14, fontWeight: 500, color: '#37352f' }}>gateway</div>
-          <div style={{ fontSize: 11, color: '#9b9a94' }}>
-            {name} · {(totalRps / 1000).toFixed(2)}k req/s
+          <div style={{ fontSize: 15, fontWeight: 500, color: '#37352f' }}>gateway</div>
+          <div style={{ fontSize: 12, color: '#9b9a94' }}>
+            {name}
+            {totalRps > 0 ? ` · ${(totalRps / 1000).toFixed(2)}k req/s` : ''}
           </div>
         </div>
       </Html>
