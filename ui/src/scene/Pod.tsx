@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 import { PodInfo } from '../types'
+import { useTheme, BadgeTheme } from '../theme'
 
 const PENT = new THREE.CylinderGeometry(0.75, 0.75, 1.1, 5, 1)
 const PENT_EDGES = new THREE.EdgesGeometry(PENT)
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export function Pod({ pod, color, lead, position }: Props) {
+  const theme = useTheme()
   const group = useRef<THREE.Group>(null!)
   const body = useRef<THREE.Mesh>(null!)
   const edges = useRef<THREE.LineSegments>(null!)
@@ -32,13 +34,13 @@ export function Pod({ pod, color, lead, position }: Props) {
   const dashedMat = useMemo(
     () =>
       new THREE.LineDashedMaterial({
-        color: '#a8a7a0',
+        color: theme.name === 'dark' ? '#73736e' : '#a8a7a0',
         dashSize: 0.12,
         gapSize: 0.09,
         transparent: true,
         opacity: 0.9,
       }),
-    []
+    [theme.name]
   )
 
   useEffect(() => {
@@ -74,8 +76,8 @@ export function Pod({ pod, color, lead, position }: Props) {
     return (
       <group ref={group} position={position} rotation={[0, Math.PI / 10, 0]}>
         <lineSegments ref={edges} geometry={PENT_EDGES} material={dashedMat} />
-        <Html center position={[0, 1.1, 0]} style={{ pointerEvents: 'none' }}>
-          <div style={badgeStyle('#fdf8ec', '#8a6d1a', '#efe3c0')}>pending</div>
+        <Html center position={[0, 1.1, 0]} distanceFactor={36} style={{ pointerEvents: 'none' }}>
+          <div style={badgeStyle(theme.pendingBadge)}>pending</div>
         </Html>
       </group>
     )
@@ -95,20 +97,25 @@ export function Pod({ pod, color, lead, position }: Props) {
         <meshLambertMaterial color={fillColor} />
       </mesh>
       {crashed && (
-        <Html center position={[0.6, 1.05, 0]} style={{ pointerEvents: 'none' }}>
-          <div style={badgeStyle('#fdf0ef', '#b3261e', '#f2d5d2')}>↻ {pod.restarts}</div>
+        <Html
+          center
+          position={[0.6, 1.05, 0]}
+          distanceFactor={36}
+          style={{ pointerEvents: 'none' }}
+        >
+          <div style={badgeStyle(theme.crashBadge)}>↻ {pod.restarts}</div>
         </Html>
       )}
     </group>
   )
 }
 
-function badgeStyle(bg: string, fg: string, border: string): React.CSSProperties {
+function badgeStyle(badge: BadgeTheme): React.CSSProperties {
   return {
     fontSize: 11,
-    color: fg,
-    background: bg,
-    border: `1px solid ${border}`,
+    color: badge.fg,
+    background: badge.bg,
+    border: `1px solid ${badge.border}`,
     borderRadius: 20,
     padding: '2px 8px',
     whiteSpace: 'nowrap',

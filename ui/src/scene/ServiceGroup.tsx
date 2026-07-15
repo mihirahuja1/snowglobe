@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 import { ServiceInfo } from '../types'
+import { useTheme } from '../theme'
 import { Pod } from './Pod'
 
 interface Props {
@@ -18,6 +19,7 @@ export function servicePosition(svc: ServiceInfo): THREE.Vector3 {
 }
 
 export function ServiceGroup({ service, compact = false }: Props) {
+  const theme = useTheme()
   const pos = useMemo(() => servicePosition(service), [service.angle, service.dist])
   const away = useMemo(
     () => new THREE.Vector3(pos.x, 0, pos.z).normalize(),
@@ -30,12 +32,12 @@ export function ServiceGroup({ service, compact = false }: Props) {
   const leadUtil = service.pods[0]?.util ?? 0
 
   let statusText = `${ready}/${service.desired} ready · cpu ${Math.round(leadUtil * 100)}%`
-  let statusColor = '#9b9a94'
+  let statusColor = theme.textMuted
   if (crashing) {
     statusText = `${ready}/${service.desired} ready · CrashLoopBackOff`
-    statusColor = '#b3261e'
+    statusColor = theme.statusCrash
   } else if (ready < service.desired) {
-    statusColor = '#8a6d1a'
+    statusColor = theme.statusWarn
   }
   const unhealthy = crashing || ready < service.desired
   const displayName =
@@ -51,7 +53,7 @@ export function ServiceGroup({ service, compact = false }: Props) {
         position={[pos.x + away.x * plateCenter, 0.015, pos.z + away.z * plateCenter]}
       >
         <planeGeometry args={[2.6, plateLen]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.85} />
+        <meshBasicMaterial color={theme.plate} transparent opacity={theme.plateOpacity} />
       </mesh>
       {service.pods.map((pod, i) => (
         <Pod
@@ -70,12 +72,16 @@ export function ServiceGroup({ service, compact = false }: Props) {
         style={{ pointerEvents: 'none' }}
       >
         <div title={service.name} style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
-          <div style={{ fontSize: 15, fontWeight: 500, color: '#37352f' }}>{displayName}</div>
+          <div style={{ fontSize: 15, fontWeight: 500, color: theme.textPrimary }}>
+            {displayName}
+          </div>
           {(!compact || unhealthy) && (
             <div style={{ fontSize: 12, color: statusColor }}>{statusText}</div>
           )}
           {!compact && service.rps > 0 && (
-            <div style={{ fontSize: 12, color: '#9b9a94' }}>{service.rps.toLocaleString()} req/s</div>
+            <div style={{ fontSize: 12, color: theme.textMuted }}>
+              {service.rps.toLocaleString()} req/s
+            </div>
           )}
         </div>
       </Html>

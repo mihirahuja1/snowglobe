@@ -3,6 +3,7 @@ import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { ClusterState } from '../types'
+import { useTheme } from '../theme'
 import { Gateway } from './Gateway'
 import { ServiceGroup, servicePosition } from './ServiceGroup'
 import { Stream } from './Stream'
@@ -23,6 +24,7 @@ function CameraRig({ sceneRadius }: { sceneRadius: number }) {
 }
 
 export function Scene({ cluster }: { cluster: ClusterState }) {
+  const theme = useTheme()
   const positions = useMemo(() => {
     const map = new Map<string, THREE.Vector3>()
     for (const svc of cluster.services) map.set(svc.name, servicePosition(svc))
@@ -43,13 +45,13 @@ export function Scene({ cluster }: { cluster: ClusterState }) {
     <Canvas
       shadows
       camera={{ position: [19, 26, 25], fov: 42 }}
-      style={{ background: '#f6f6f3' }}
+      style={{ background: theme.bg }}
     >
       <fog
         attach="fog"
-        args={['#f6f6f3', Math.max(30, sceneRadius * 2.2), Math.max(60, sceneRadius * 5.5)]}
+        args={[theme.bg, Math.max(30, sceneRadius * 2.2), Math.max(60, sceneRadius * 5.5)]}
       />
-      <ambientLight intensity={0.75} />
+      <ambientLight intensity={theme.ambient} />
       <directionalLight
         position={[10, 18, 8]}
         intensity={0.65}
@@ -64,13 +66,17 @@ export function Scene({ cluster }: { cluster: ClusterState }) {
 
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[40, 64]} />
-        <meshBasicMaterial color="#f6f6f3" />
+        <meshBasicMaterial color={theme.bg} />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]} receiveShadow>
         <circleGeometry args={[40, 64]} />
-        <shadowMaterial opacity={0.12} />
+        <shadowMaterial opacity={theme.shadowOpacity} />
       </mesh>
-      <gridHelper args={[44, 44, '#e4e3de', '#e4e3de']} position={[0, 0.01, 0]} />
+      <gridHelper
+        key={theme.name}
+        args={[44, 44, theme.grid, theme.grid]}
+        position={[0, 0.01, 0]}
+      />
 
       <Gateway name={cluster.gatewayName} totalRps={totalRps} />
 
